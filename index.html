@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>演讲练习工具 · 作品集</title>
+  <meta name="description" content="从 unprompted.cool 复刻并中文化的即兴演讲练习器：抽题、计时、语音转写、五维评分、诊断报告、洗稿，单文件网页零依赖" />
+  <style>
+    :root {
+      --bg: #030712;
+      --bg-card: rgba(17, 24, 39, 0.7);
+      --border: rgba(56, 189, 248, 0.2);
+      --cyan: #22d3ee;
+      --blue: #3b82f6;
+      --violet: #8b5cf6;
+      --green: #10b981;
+      --text: #f3f4f6;
+      --text-dim: #94a3b8;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(34, 211, 238, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(34, 211, 238, 0.05) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(circle at 50% 0%, black, transparent 80%);
+      -webkit-mask-image: radial-gradient(circle at 50% 0%, black, transparent 80%);
+      z-index: -2;
+      pointer-events: none;
+    }
+
+    .bg-glow {
+      position: fixed;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.16), transparent 60%);
+      top: -200px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: -1;
+      filter: blur(60px);
+      pointer-events: none;
+    }
+
+    header { text-align: center; padding: 72px 20px 40px; }
+
+    header h1 {
+      font-size: 42px;
+      font-weight: 800;
+      margin: 0 0 12px;
+      background: linear-gradient(135deg, var(--cyan), var(--blue), var(--violet));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      letter-spacing: -1px;
+    }
+
+    header p {
+      font-size: 18px;
+      color: var(--text-dim);
+      margin: 0 auto;
+      max-width: 680px;
+    }
+
+    .toc {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 24px 8px;
+    }
+
+    .toc a {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 18px;
+      border-radius: 999px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      text-decoration: none;
+      font-size: 14px;
+      transition: all 0.25s ease;
+    }
+
+    .toc a:hover {
+      color: var(--text);
+      border-color: var(--cyan);
+      box-shadow: 0 0 18px rgba(34, 211, 238, 0.18);
+      transform: translateY(-2px);
+    }
+
+    .toc a b { font-size: 12px; color: var(--cyan); font-weight: 700; }
+
+    .container { max-width: 1080px; margin: 0 auto; padding: 20px 24px 80px; }
+
+    .case { margin-bottom: 76px; scroll-margin-top: 24px; }
+    .case-head { text-align: center; margin-bottom: 34px; }
+
+    .case-index {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(139, 92, 246, 0.12);
+      border: 1px solid rgba(139, 92, 246, 0.35);
+      color: #c4b5fd;
+      margin-bottom: 14px;
+    }
+
+    .case-head h2 {
+      font-size: 30px;
+      font-weight: 800;
+      margin: 0 0 8px;
+      letter-spacing: -0.5px;
+    }
+
+    .case-head p { margin: 0 auto; color: var(--text-dim); font-size: 15px; max-width: 640px; }
+
+    .pipeline {
+      display: flex;
+      align-items: stretch;
+      justify-content: space-between;
+      gap: 16px;
+      margin: 0 0 48px;
+      position: relative;
+    }
+
+    .pipeline::before {
+      content: "";
+      position: absolute;
+      top: 36px;
+      left: 10%;
+      right: 10%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--cyan), var(--blue), var(--violet), transparent);
+      z-index: 0;
+      opacity: 0.6;
+    }
+
+    .node { flex: 1; min-width: 0; position: relative; z-index: 1; text-align: center; }
+
+    .node-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      margin: 0 auto 16px;
+      display: grid;
+      place-items: center;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      box-shadow: 0 0 24px rgba(139, 92, 246, 0.15);
+      font-size: 28px;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .node:hover .node-icon { transform: scale(1.08); box-shadow: 0 0 32px rgba(139, 92, 246, 0.35); }
+
+    .node-title { font-weight: 700; font-size: 16px; margin-bottom: 6px; color: var(--text); }
+    .node-desc { font-size: 13px; color: var(--text-dim); padding: 0 8px; }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+
+    .cards.split { grid-template-columns: 1fr; }
+
+    .card-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: stretch;
+      padding: 0;
+      min-height: 320px;
+    }
+
+    .card-split .card-main { padding: 28px; display: flex; flex-direction: column; }
+    .card-split .card-main ul { flex: 1; }
+
+    .card-split .card-media {
+      position: relative;
+      min-height: 320px;
+      overflow: hidden;
+      background: rgba(0,0,0,0.3);
+    }
+
+    .card-split .card-media img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top;
+      border-radius: 0 20px 20px 0;
+      transition: transform 0.35s ease;
+    }
+
+    .card-split:hover .card-media img { transform: scale(1.03); }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 24px 56px rgba(139, 92, 246, 0.14);
+      border-color: rgba(139, 92, 246, 0.4);
+    }
+
+    .card::after {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--cyan), var(--violet));
+      opacity: 0.7;
+    }
+
+    .card-header { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+
+    .card-badge {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      background: rgba(139, 92, 246, 0.12);
+      border: 1px solid rgba(139, 92, 246, 0.35);
+      font-size: 17px;
+      font-weight: 700;
+      color: #c4b5fd;
+      flex-shrink: 0;
+    }
+
+    .card h3 { margin: 0; font-size: 20px; font-weight: 700; }
+    .card p.sub { margin: 4px 0 0; color: var(--text-dim); font-size: 14px; }
+
+    .card ul { margin: 16px 0 0; padding-left: 18px; color: var(--text-dim); font-size: 14px; }
+    .card li { margin-bottom: 8px; }
+    .card li strong { color: var(--text); font-weight: 600; }
+
+    .screenshot {
+      margin-top: 20px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.3);
+    }
+
+    .screenshot img { width: 100%; display: block; transition: transform 0.35s ease; }
+    .card:hover .screenshot img { transform: scale(1.02); }
+
+    /* 竖长截图：限高裁切预览，点开图片看全图 */
+    .screenshot.tall img {
+      max-height: 420px;
+      object-fit: cover;
+      object-position: top;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--green);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      margin-top: 16px;
+    }
+
+    .status-pill::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.2); }
+    }
+
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(139,92,246,0.25), transparent);
+      margin: 0 0 64px;
+      border: 0;
+    }
+
+    /* 工程底座 */
+    .notes {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .note {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px 24px;
+      font-size: 14px;
+      color: var(--text-dim);
+    }
+
+    .note h4 { margin: 0 0 8px; font-size: 15px; color: var(--text); }
+    .note .tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--cyan);
+      margin-bottom: 6px;
+    }
+
+    @media (max-width: 760px) {
+      header h1 { font-size: 30px; }
+      .case-head h2 { font-size: 24px; }
+      .pipeline { flex-direction: column; gap: 30px; }
+      .pipeline::before { display: none; }
+      .cards { grid-template-columns: 1fr; }
+      .toc { display: none; }
+      .card-split { grid-template-columns: 1fr; }
+      .card-split .card-media { min-height: 240px; border-radius: 0 0 20px 20px; }
+      .card-split .card-media img { border-radius: 0 0 20px 20px; }
+    }
+
+    footer { text-align: center; padding: 40px 20px; color: var(--text-dim); font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="bg-glow"></div>
+
+  <header>
+    <h1>演讲练习工具</h1>
+    <p>从 unprompted.cool 复刻并中文化，再一路改造成自己的口语训练器 —— 抽题、讲一分钟，自动拿到带证据的诊断报告</p>
+  </header>
+
+  <nav class="toc">
+    <a href="#timer"><b>01</b>计时与录音</a>
+    <a href="#diag"><b>02</b>诊断报告</a>
+    <a href="#score"><b>03</b>评分与数据</a>
+    <a href="#rewrite"><b>04</b>洗稿</a>
+  </nav>
+
+  <div class="container">
+
+    <!-- 总览 -->
+    <section class="case" id="overview">
+      <div class="case-head">
+        <div class="case-index">产品概览</div>
+        <h2>一轮完整练习长什么样</h2>
+        <p>单文件网页、零依赖，复刻自 unprompted.cool 并中文化，之后按自己的练习习惯持续改造</p>
+      </div>
+
+      <div class="pipeline">
+        <div class="node">
+          <div class="node-icon">🎲</div>
+          <div class="node-title">抽题</div>
+          <div class="node-desc">三大类题库，可批量导入</div>
+        </div>
+        <div class="node">
+          <div class="node-icon">⏱️</div>
+          <div class="node-title">计时开讲</div>
+          <div class="node-desc">即兴 60 秒 / 深研 180 秒</div>
+        </div>
+        <div class="node">
+          <div class="node-icon">🎙️</div>
+          <div class="node-title">语音转写</div>
+          <div class="node-desc">边讲边转，录音留底</div>
+        </div>
+        <div class="node">
+          <div class="node-icon">📊</div>
+          <div class="node-title">自动复盘</div>
+          <div class="node-desc">五维评分 + 诊断报告</div>
+        </div>
+        <div class="node">
+          <div class="node-icon">✂️</div>
+          <div class="node-title">洗稿</div>
+          <div class="node-desc">只动标点，不改用词</div>
+        </div>
+        <div class="node">
+          <div class="node-icon">☁️</div>
+          <div class="node-title">历史同步</div>
+          <div class="node-desc">本地为主，云端合并</div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- 01 计时 -->
+    <section class="case" id="timer">
+      <div class="case-head">
+        <div class="case-index">01 · 计时与模式</div>
+        <h2>倒计时归零，不是结束</h2>
+        <p>讲嗨了不被机器打断，讲没词了自己按停 —— 尊重真实的表达节奏</p>
+      </div>
+
+      <div class="cards">
+        <article class="card">
+          <div class="card-header">
+            <div class="card-badge">1</div>
+            <div>
+              <h3>双模式计时</h3>
+              <p class="sub">即兴开讲 60 秒 / 深度研究 180 秒</p>
+            </div>
+          </div>
+          <ul>
+            <li><strong>两种模式：</strong>即兴开讲对应短准备，深度研究对应长准备，时长分开记忆</li>
+            <li><strong>超时不打断：</strong>倒计时归零只响铃，自动切换正计时（橙色脉冲环），讲到自己满意为止</li>
+            <li><strong>完成语义：</strong>只有点「我说完了」才算走完一轮，中途放弃不计入历史</li>
+            <li><strong>环形进度：</strong>剩余时间一目了然，超时后数字变号继续走</li>
+          </ul>
+          <span class="status-pill">每天在用</span>
+          <div class="screenshot">
+            <img src="images/1-speech.png" alt="计时开讲界面" />
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card-header">
+            <div class="card-badge">2</div>
+            <div>
+              <h3>只讲一遍的录音链路</h3>
+              <p class="sub">一个真实抱怨逼出来的架构修正</p>
+            </div>
+          </div>
+          <ul>
+            <li><strong>原来的问题：</strong>计时里讲的第一遍没录上，进复盘又要求「再说一遍」—— 一轮练习讲两遍</li>
+            <li><strong>修正：</strong>录音从「开讲」那一刻启动，识别与留底音频并行，复盘面板直接复用</li>
+            <li><strong>假死看门狗：</strong>识别服务被墙时「不报错也不出字」，看门狗自动检测并停止识别 —— 「你说的话一点没丢，音频已留底」</li>
+            <li><strong>环境识别：</strong>微信 / 飞书等 App 内置浏览器整体禁麦克风，直接告诉用户「换 Safari 打开」，而不是让人去翻系统设置</li>
+          </ul>
+          <span class="status-pill">已上线</span>
+          <div class="screenshot">
+            <img src="images/3-review-auto.png" alt="复盘面板自动弹出" />
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- 02 诊断 -->
+    <section class="case" id="diag">
+      <div class="case-head">
+        <div class="case-index">02 · 诊断报告</div>
+        <h2>每一条结论，都带着你说的原话</h2>
+        <p>主题 / 优点 / 缺点 / 口头禅 / 综合评分五个板块，不写空话，判断给证据</p>
+      </div>
+
+      <div class="cards split">
+        <article class="card card-split">
+          <div class="card-main">
+            <div class="card-header">
+              <div class="card-badge">3</div>
+              <div>
+                <h3>五板块诊断</h3>
+                <p class="sub">像教练点评，不像机器报数</p>
+              </div>
+            </div>
+            <ul>
+              <li><strong>优点带证据：</strong>「收尾有落点：最后一句收在『最后记得收尾…』」—— 引原话，不给套话</li>
+              <li><strong>缺点可定位：</strong>「句子太长（3 处超 50 字）：最长一句 91 字，一口气讲完听众接不住」</li>
+              <li><strong>主题诚实标注：</strong>工具不认语义，核心词按词频算，页面上原样说明，不假装读懂了</li>
+              <li><strong>口头禅洞察：</strong>口头禅是 0 但长停顿 12 次 = 卡壳换了个形式，两个指标放在一起解读</li>
+            </ul>
+            <span class="status-pill">已上线</span>
+          </div>
+          <div class="card-media">
+            <img src="images/dx-1.png" alt="诊断报告五板块" />
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- 03 评分 & 同步 -->
+    <section class="case" id="score">
+      <div class="case-head">
+        <div class="case-index">03 · 评分与数据</div>
+        <h2>机械指标交给机器，进步看得见</h2>
+        <p>口头禅、停顿、语速、重复、时间控制 —— 十分制，每一分都能复算</p>
+      </div>
+
+      <div class="cards">
+        <article class="card">
+          <div class="card-header">
+            <div class="card-badge">4</div>
+            <div>
+              <h3>十分制五维评分</h3>
+              <p class="sub">口头禅 3 · 长停顿 1 · 语速 1 · 重复 3 · 时间控制 2</p>
+            </div>
+          </div>
+          <ul>
+            <li><strong>重复三层检测：</strong>紧邻重复「X，X」、重复分句、高频短语 —— 还要过滤「的人生」这类虚词误报</li>
+            <li><strong>时间控制算净账：</strong>准点且讲满八成 +2，超时按比例扣，鼓励把内容压缩进时限</li>
+            <li><strong>指标会自曝局限：</strong>语速受转写完整度影响，页面标注「仅供参考」，不装精确</li>
+            <li><strong>评分构成表：</strong>每行是维度 / 实测值 / 得分-满分，绿橙红三色，低分知道低在哪</li>
+          </ul>
+          <span class="status-pill">已上线</span>
+          <div class="screenshot">
+            <img src="images/5-analyzed.png" alt="五维评分结果" />
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card-header">
+            <div class="card-badge">5</div>
+            <div>
+              <h3>历史与跨设备同步</h3>
+              <p class="sub">本地为主，云只是合并通道</p>
+            </div>
+          </div>
+          <ul>
+            <li><strong>选型实测：</strong>逐一试了 7 家免费云服务，结论「curl 通了不算数，CORS 才是判官」，最后只有 JSONBin 能用</li>
+            <li><strong>私有仓库：</strong>同步码对应私密 bin，拿到码没有密钥也读不出内容</li>
+            <li><strong>本地永不丢：</strong>localStorage 是主存储，云挂了 / 额度满了，本地记录一条不少</li>
+            <li><strong>合并规则：</strong>按记录 id 求并集，同 id 取更新的，防止云端截断版覆盖本地全文</li>
+          </ul>
+          <span class="status-pill">已上线</span>
+          <div class="screenshot">
+            <img src="images/6-history.png" alt="练习历史与云同步" />
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- 04 洗稿 -->
+    <section class="case" id="rewrite">
+      <div class="case-head">
+        <div class="case-index">04 · 洗稿</div>
+        <h2>不假装能做语义改写</h2>
+        <p>545 字无标点的口播原稿，机器负责断句和去重，一个词都不替你换</p>
+      </div>
+
+      <div class="cards split">
+        <article class="card card-split">
+          <div class="card-main">
+            <div class="card-header">
+              <div class="card-badge">6</div>
+              <div>
+                <h3>结构重排稿</h3>
+                <p class="sub">只动标点和分段，用词一字不改</p>
+              </div>
+            </div>
+            <ul>
+              <li><strong>停顿变标点：</strong>停顿 ≥8 秒分段、≥3 秒句号、≥1.2 秒逗号 —— 按你实际的呼吸重排</li>
+              <li><strong>半截话识别：</strong>停顿前以「的 / 一种 / 是 / 因为…」结尾，说明话没说完，用逗号不硬断</li>
+              <li><strong>去重不动词：</strong>先删口头禅再删重复，之后只调标点 —— 重构稿必须通过「子序列校验」（逐字按序比对原稿）才能展示</li>
+              <li><strong>边界写在脸上：</strong>纯离线网页读不懂语义，换词、金句、重组论证 —— 做不到就不承诺</li>
+              <li><strong>量化对比：</strong>重排后自动给出字数 / 句数 / 平均句长 / 最长句的变化表</li>
+            </ul>
+            <span class="status-pill">已上线</span>
+          </div>
+          <div class="card-media">
+            <img src="images/dx-restructured.png" alt="结构重排稿与改写对比" />
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- 工程底座 -->
+    <section class="case" id="notes">
+      <div class="case-head">
+        <div class="case-index">工程底座</div>
+        <h2>看不见但撑住体验的部分</h2>
+        <p>这不是「让 AI 写了个网页」，而是一路踩坑、验证、固化的过程</p>
+      </div>
+
+      <div class="notes">
+        <div class="note">
+          <div class="tag">E2E</div>
+          <h4>110+ 条端到端断言</h4>
+          <p>Playwright 覆盖全流程：计时归零转正计时、诊断五板块顺序、重构稿子序列校验、麦克风授权录音、控制台零报错。页面抛错即使功能全对也算失败。</p>
+        </div>
+        <div class="note">
+          <div class="tag">权限</div>
+          <h4>麦克风在 iframe 里必挂</h4>
+          <p>发布平台把页面套进跨域 iframe，而 iframe 没有 allow="microphone" —— 录音必然被拒且无解。最终方案：上传公网直链顶层打开，iPhone Safari 实测录音正常。</p>
+        </div>
+        <div class="note">
+          <div class="tag">选型</div>
+          <h4>七家免费云逐一实测</h4>
+          <p>免注册云全部死于 CORS 或容量：有的 Cloudflare 403，有的写接口不返回跨域头，有的单条超 1.5KB 就 500。结论沉淀成选型方法：浏览器里测，CORS 是判官。</p>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <footer>
+    抽题 → 开讲 → 转写 → 复盘 → 洗稿 → 同步 —— 每一步都是自己真实在用的功能
+  </footer>
+</body>
+</html>
