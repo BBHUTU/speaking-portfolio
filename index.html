@@ -324,6 +324,38 @@
       border: 0;
     }
 
+    .cta-demo {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 26px;
+      padding: 13px 26px;
+      border-radius: 999px;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      text-decoration: none;
+      background: linear-gradient(135deg, rgba(34,211,238,.16), rgba(139,92,246,.16));
+      border: 1px solid rgba(34,211,238,.38);
+      transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+    }
+    .cta-demo:hover {
+      transform: translateY(-2px);
+      border-color: rgba(34,211,238,.7);
+      box-shadow: 0 10px 30px -12px rgba(34,211,238,.5);
+    }
+    .cta-demo .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 0 rgba(16,185,129,.6);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(16,185,129,.55); }
+      70%  { box-shadow: 0 0 0 9px rgba(16,185,129,0); }
+      100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+    }
+
     /* 工程底座 */
     .notes {
       display: grid;
@@ -372,6 +404,9 @@
   <header>
     <h1>演讲练习工具</h1>
     <p>从 unprompted.cool 复刻并中文化，再一路改造成自己的口语训练器 —— 抽题、讲一分钟，自动拿到带证据的诊断报告</p>
+    <a class="cta-demo" href="https://bbhutu.github.io/unprompted-trainer/" target="_blank" rel="noopener">
+      <span class="dot"></span>在线体验 Demo —— 抽一题，讲一分钟，立刻出诊断报告
+    </a>
   </header>
 
   <nav class="toc">
