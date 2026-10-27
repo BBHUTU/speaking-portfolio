@@ -395,9 +395,25 @@
     }
 
     footer { text-align: center; padding: 40px 20px; color: var(--text-dim); font-size: 13px; }
+
+    /* 返回总索引 */
+    .home-link {
+      position: fixed; top: 18px; left: 18px; z-index: 60;
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 600;
+      color: var(--text-dim); text-decoration: none;
+      background: rgba(17, 24, 39, 0.82);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      transition: all .25s ease;
+    }
+    .home-link:hover { color: var(--text); border-color: var(--cyan); box-shadow: 0 0 18px rgba(34,211,238,.22); transform: translateY(-1px); }
+    @media (max-width: 760px) { .home-link { top: 12px; left: 12px; font-size: 12px; padding: 6px 12px; } }
   </style>
 </head>
 <body>
+  <a class="home-link" href="https://bbhutu.github.io/">← 全部作品集</a>
+
   <div class="bg-grid"></div>
   <div class="bg-glow"></div>
 
